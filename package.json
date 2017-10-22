@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "main": "clock.js",
+    "clock": "node clock.js",
+    "first": "node first.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,6 +18,9 @@
   },
   "homepage": "https://github.com/BitArchitect/BackgroundWorkerFireIncidents#readme",
   "dependencies": {
-    "request": "^2.83.0"
+    "bluebird": "^3.5.1",
+    "pg-promise": "^7.0.3",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2"
   }
 }
