@@ -123,7 +123,7 @@ const _processData = (data) => {
   }, {});
 }
 
-const _insertIntoDB = async (data) => {
+const _insertIntoDB = (data) => {
   // Input:
   // data = {
   //   "91405": {
@@ -136,18 +136,6 @@ const _insertIntoDB = async (data) => {
   var zipcodes = Object.getOwnPropertyNames(data);
   // console.log('Zipcodes:', zipcodes);
   // console.log('Data:', data);
-  for (let i = 0; i < zipcodes.length; i++) {
-    const zipcode = zipcodes[i];
-    const id = await _getOrInsertZipcodeId(zipcode, data[zipcode].district);
-    const query = new PQ(
-      `INSERT INTO fireincidents(zipcode, incident_date, incident_count)
-      VALUES(${id}, '${data[zipcode].date}', ${data[zipcode].incidents})`
-    );
-    return client.query(query)
-    .catch(err => {
-      console.error('Error adding new data into the db', err, '\nQuery was:', query);
-    })
-  }
   return Promise.all(zipcodes.map(zipcode => {
     _getOrInsertZipcodeId(zipcode, data[zipcode].district)
     .then(id => {
@@ -164,7 +152,7 @@ const _insertIntoDB = async (data) => {
     })
   }))
   .then(() => {
-    console.log('Finished adding all the new data into the db for date:', data[0].date);
+    console.log('Finished adding all the new data into the db');
   })
   .catch(err => {
     console.error('Error at Promise.all for inserting into the db', err);
@@ -179,7 +167,7 @@ const _getFireIncidentsByDateFromAPI = (date) => {
     url: "https://data.sfgov.org/resource/wbb6-uh78.json",
     qs: {
       $$app_token : process.env.DATASFGOV_KEY || 'xdD9TSiPqAKYnSOab3U0AexMU',
-      $where : `incident_date='${incident_date}'`,
+      $where : `incident_date='${'2003-01-01T00:00:00.000' || incident_date}'`,
       $limit : 10
     }
   })
@@ -188,34 +176,26 @@ const _getFireIncidentsByDateFromAPI = (date) => {
   });
 }
 
-const start = async () => {
+const start = () => {
   var today = new Date();
   console.log("Worker starting for date:", today.toString());
   _checkDBForMissingData()
   .then(stackOfDates => {
     if (stackOfDates.length) {
-      for (var i = 0; i < stackOfDates.length; i++) {
-        const data = await _getFireIncidentsByDateFromAPI(stackOfDates[i]);
-        let processed = _processData(JSON.parse(data));
-        await _insertIntoDB(processed);
-      }
-      // return Promise.all(stackOfDates.map(date => {
-      //   return _getFireIncidentsByDateFromAPI(date)
-      //   .then(data => {
-      //     // console.log('Response Data:', data);
-      //     var processed = _processData(JSON.parse(data));
-      //     _insertIntoDB(processed);
-      //   })
-      // }))
+      return Promise.all(stackOfDates.map(date => {
+        return _getFireIncidentsByDateFromAPI(date)
+        .then(data => {
+          // console.log('Response Data:', data);
+          var processed = _processData(JSON.parse(data));
+          _insertIntoDB(processed);
+        })
+      }))
     } else {
-      const data = await _getFireIncidentsByDateFromAPI(stackOfDates[i]);
-      let processed = _processData(JSON.parse(data));
-      await _insertIntoDB(processed);
-      // return _getFireIncidentsByDateFromAPI(today)
-      // .then(data => {
-      //   var processed = _processData(data);
-      //   return _insertIntoDB(processed);
-      // })
+      return _getFireIncidentsByDateFromAPI(today)
+      .then(data => {
+        var processed = _processData(data);
+        return _insertIntoDB(processed);
+      })
     }
   })
   .then(result => {
