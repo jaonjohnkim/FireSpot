@@ -13,6 +13,3 @@ var job = new Cron({
 
 job.start();
 console.log('Fire Instance Clock Job Status:', job.running);
-
-//Start worker 1st time
-worker.start();
