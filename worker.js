@@ -1,5 +1,6 @@
 const request = require('request-promise');
 const Promise = require('bluebird');
+const async = require('async');
 const initOptions = {
   promiseLib: Promise
   // connect: (client, dc, isFresh) => {
