@@ -15,8 +15,7 @@ const pgp = require('pg-promise')(initOptions);
 const PQ = require('pg-promise').ParameterizedQuery;
 // var pg = require('pg');
 
-// var connection = process.env.HEROKU_POSTGRESQL_PURPLE_URL || 'postgres://localhost:5432';
-const connection = 'postgres://postgres:plantlife@localhost:5432/fireincidents';
+var connection = process.env.HEROKU_POSTGRESQL_PURPLE_URL || 'postgres://postgres:plantlife@localhost:5432/fireincidents';
 const client = pgp(connection);
 // client.connect();
 
