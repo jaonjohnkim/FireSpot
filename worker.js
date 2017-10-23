@@ -15,7 +15,9 @@ const pgp = require('pg-promise')(initOptions);
 const PQ = require('pg-promise').ParameterizedQuery;
 // var pg = require('pg');
 
-var connection = process.env.HEROKU_POSTGRESQL_PURPLE_URL || 'postgres://postgres:plantlife@localhost:5432/fireincidents';
+var connection = process.env.HEROKU_POSTGRESQL_PURPLE_URL
+  || 'postgres://ilixusqwtygbzc:4c41789e68c96988d46302d1d3418407497654ae8df34b0ced027bd9c01ad888@ec2-107-21-113-16.compute-1.amazonaws.com:5432/d31q1pt3qho6vf'
+  || 'postgres://postgres:plantlife@localhost:5432/fireincidents';
 const client = pgp(connection);
 // client.connect();
 
@@ -43,7 +45,7 @@ const _checkDBForMissingData = async () => {
   //query: where incident_date = yesterday, if yesterday data is 0, then add to stack, and go further back
   console.log('About to get fire incidents by date from db for date:', date);
   var data = await _getFireIncidentsByDateFromDb(date);
-  console.log('data', data);
+  // console.log('data', data);
   while (data.length === 0 && date.getTime() > (new Date('01/01/2003')).getTime()) {
     stack.unshift(_stringifyDate(date));
     date.setDate(date.getDate() - 1);
