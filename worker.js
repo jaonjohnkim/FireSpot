@@ -57,35 +57,36 @@ const _getZipcodeId = (zipcode) => {
   var query = new PQ(
     `SELECT * FROM zipcodes WHERE zipcode = ${zipcode}`
   );
-  return client.oneOrNone(query)
+  return client.query(query)
   .catch(err => {
-    console.error('Error trying to insert new zipcode:', err);
+    console.error('Error retrieving zipcode:', err);
   })
 }
 
 const _insertZipcode = (zipcode, district) => {
   var query = new PQ(
-    `INSERT INTO zipcodes(zipcode, district) VALUES(${zipcode}, ${district})`
+    `INSERT INTO zipcodes(zipcode, district) VALUES(${zipcode}, '${district || null}')`
   );
-  return client.one(query)
+  return client.query(query)
   .then(data => {
     console.log('Inserting zipcode into DB successful: ', data.id);
     return data.id
   })
   .catch(err => {
-    console.error('Error trying to insert new zipcode:', err);
+    console.error('Error trying to insert new zipcode:', err, '\nQuery was: ', query);
   })
 }
 
 const _getOrInsertZipcodeId = (zipcode, district) => {
+  console.log('getOrInsertZipcodeId, zipcode:', zipcode, ' district:', district);
   return _getZipcodeId(zipcode)
   .then(data => {
     console.log('GET ZIPCODE ID RESPONSE:', data);
     if (!data) {
       return _insertZipcode(zipcode, district);
     } else {
-      console.log('Found zipcode ID:', data);
-      return data[0];
+      console.log('Found zipcode ID:', data[0].id);
+      return data[0].id;
     }
   })
 }
@@ -113,7 +114,7 @@ const _processData = (data) => {
       dataByZipcode.incidents += 1;
     } else if (row.zipcode){
       acc[row.zipcode] = {
-        district: row.neightborhood_district,
+        district: row.neighborhood_district,
         incidents: 1,
         date: row.incident_date
       };
@@ -122,7 +123,7 @@ const _processData = (data) => {
   }, {});
 }
 
-const _insertIntoDB = (data) => {
+const _insertIntoDB = async (data) => {
   // Input:
   // data = {
   //   "91405": {
@@ -133,40 +134,52 @@ const _insertIntoDB = (data) => {
   // }
   // console.log('DATA:', data);
   var zipcodes = Object.getOwnPropertyNames(data);
-  console.log('Zipcodes:', zipcodes);
-  Promise.all(zipcodes.map(zipcode => {
-    return _getOrInsertZipcodeId(zipcode, data[zipcode].district)
+  // console.log('Zipcodes:', zipcodes);
+  // console.log('Data:', data);
+  for (let i = 0; i < zipcodes.length; i++) {
+    const zipcode = zipcodes[i];
+    const id = await _getOrInsertZipcodeId(zipcode, data[zipcode].district);
+    const query = new PQ(
+      `INSERT INTO fireincidents(zipcode, incident_date, incident_count)
+      VALUES(${id}, '${data[zipcode].date}', ${data[zipcode].incidents})`
+    );
+    return client.query(query)
+    .catch(err => {
+      console.error('Error adding new data into the db', err, '\nQuery was:', query);
+    })
+  }
+  return Promise.all(zipcodes.map(zipcode => {
+    _getOrInsertZipcodeId(zipcode, data[zipcode].district)
     .then(id => {
       console.log('Obtained zipcode ID: ', id);
       var query = new PQ(
-        `INSERT INTO fireincidents('zipcode', 'incident_date', 'incident_count')}) VALUES($1, $2, $3)`
+        `INSERT INTO fireincidents(zipcode, incident_date, incident_count)
+        VALUES(${id}, '${data[zipcode].date}', ${data[zipcode].incidents})`
       );
-      query.values = [id, data[zipcode].date, data[zipcode].incidents];
-      return client.none(query)
+      // query.values = [id, data[zipcode].date, data[zipcode].incidents];
+      return client.query(query)
+      .catch(err => {
+        console.error('Error adding new data into the db', err, '\nQuery was:', query);
+      })
     })
   }))
   .then(() => {
-    console.log('Finished adding all the new data into the db');
+    console.log('Finished adding all the new data into the db for date:', data[0].date);
   })
   .catch(err => {
-    console.error('Error adding new data into the db', err);
+    console.error('Error at Promise.all for inserting into the db', err);
   })
 }
 
 const _getFireIncidentsByDateFromAPI = (date) => {
-  let incident_date;
-  if (typeof date === 'object') {
-    incident_date = _stringifyDate(date);
-  } else {
-    incident_date = date;
-  }
+  let incident_date = typeof date === 'object' ? _stringifyDate(date) : date;
   console.log('Grabbing Fire Incidents data for date:', incident_date);
   return request({
     method: 'GET',
     url: "https://data.sfgov.org/resource/wbb6-uh78.json",
     qs: {
       $$app_token : process.env.DATASFGOV_KEY || 'xdD9TSiPqAKYnSOab3U0AexMU',
-      $where : `incident_date='${'2003-01-01T00:00:00.000' || incident_date}'`,
+      $where : `incident_date='${incident_date}'`,
       $limit : 10
     }
   })
@@ -175,30 +188,38 @@ const _getFireIncidentsByDateFromAPI = (date) => {
   });
 }
 
-const start = () => {
+const start = async () => {
   var today = new Date();
   console.log("Worker starting for date:", today.toString());
   _checkDBForMissingData()
   .then(stackOfDates => {
     if (stackOfDates.length) {
-      return Promise.all(stackOfDates.map(date => {
-        return _getFireIncidentsByDateFromAPI(date)
-        .then(data => {
-          // console.log('Response Data:', data);
-          var processed = _processData(JSON.parse(data));
-          return _insertIntoDB(processed);
-        })
-      }))
+      for (var i = 0; i < stackOfDates.length; i++) {
+        const data = await _getFireIncidentsByDateFromAPI(stackOfDates[i]);
+        let processed = _processData(JSON.parse(data));
+        await _insertIntoDB(processed);
+      }
+      // return Promise.all(stackOfDates.map(date => {
+      //   return _getFireIncidentsByDateFromAPI(date)
+      //   .then(data => {
+      //     // console.log('Response Data:', data);
+      //     var processed = _processData(JSON.parse(data));
+      //     _insertIntoDB(processed);
+      //   })
+      // }))
     } else {
-      return _getFireIncidentsByDateFromAPI(today)
-      .then(data => {
-        var processed = _processData(data);
-        return _insertIntoDB(processed);
-      })
+      const data = await _getFireIncidentsByDateFromAPI(stackOfDates[i]);
+      let processed = _processData(JSON.parse(data));
+      await _insertIntoDB(processed);
+      // return _getFireIncidentsByDateFromAPI(today)
+      // .then(data => {
+      //   var processed = _processData(data);
+      //   return _insertIntoDB(processed);
+      // })
     }
   })
   .then(result => {
-    console.log('Fire Instance Worker finished ')
+    console.log('Fire Instance Worker finished, result:', result);
   })
   .catch(err => {
     console.error('Error with Worker:', err);
