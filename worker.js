@@ -77,7 +77,7 @@ const _insertZipcode = (zipcode, district) => {
 }
 
 const _getOrInsertZipcodeId = (zipcode, district) => {
-  console.log('getOrInsertZipcodeId, zipcode:', zipcode, ' district:', district);
+  // console.log('getOrInsertZipcodeId, zipcode:', zipcode, ' district:', district);
   return _getZipcodeId(zipcode)
   .then(data => {
     if (data.length === 0) {
@@ -183,7 +183,7 @@ const _getFireIncidentsByDateFromAPI = (date) => {
     method: 'GET',
     url: "https://data.sfgov.org/resource/wbb6-uh78.json",
     qs: {
-      $$app_token : process.env.DATASFGOV_KEY || 'xdD9TSiPqAKYnSOab3U0AexMU',
+      $$app_token : process.env.DATASFGOV_KEY,
       $where : `incident_date='${incident_date || '2003-01-01T00:00:00.000'}'`,
       $limit : 10000
     }
