@@ -8,7 +8,7 @@ client.on('error', err => {
   console.log('Error ' + err);
 })
 
-const getFromCache = (query, callback) => {
+const getFromCache = (query) => {
   return client.getAsync(JSON.stringify(query));
 }
 

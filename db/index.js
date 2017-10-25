@@ -53,10 +53,10 @@ const _getZipcodeId = (zipcode) => {
   );
   console.log('Query:', query);
   return client.any(query)
-  .then(data => {
-    console.log('GetZipcodeId:', data);
-    return data;
-  })
+  // .then(data => {
+  //   console.log('GetZipcodeId:', data);
+  //   return data;
+  // })
   .catch(err => {
     console.error('Error retrieving zipcode:', err, '\nQuery was:', query);
   })

@@ -109,7 +109,7 @@ const start = () => {
       db.getFireIncidentsByParamsFromDb(zipcode, threeMonthsAgoStr, today, 'month')
       .then(data => {
         redis.addToCache({
-          zipcode: zipcode,
+          zipcode: zipcode.toString(),
           startDate: threeMonthsAgoStr,
           endDate: today,
           granularity: 'month'
