@@ -1,10 +1,10 @@
 const Promise = require('bluebird');
 const initOptions = {
   promiseLib: Promise,
-  connect: (client, dc, isFresh) => {
-      const cp = client.connectionParameters;
-      console.log('Connected to database:', cp);
-    }
+  // connect: (client, dc, isFresh) => {
+  //     const cp = client.connectionParameters;
+  //     console.log('Connected to database:', cp);
+  //   }
 }
 
 const pgp = require('pg-promise')(initOptions);
@@ -47,11 +47,11 @@ const checkDBForMissingData = async () => {
 }
 
 const _getZipcodeId = (zipcode) => {
-  console.log('zipcode:', zipcode);
+  // console.log('zipcode:', zipcode);
   var query = new PQ(
     `SELECT id FROM zipcodes WHERE zipcode = ${zipcode}`
   );
-  console.log('Query:', query);
+  // console.log('Query:', query);
   return client.any(query)
   // .then(data => {
   //   console.log('GetZipcodeId:', data);
@@ -150,7 +150,7 @@ const getFireIncidentsByParamsFromDb = (zipcode, startDate, endDate, granularity
   return _getZipcodeId(zipcode)
   .then(data => {
       // const id = data[0].id;
-    console.log('GetZipcodeId:', data);
+    // console.log('GetZipcodeId:', data);
     if (data && data.length > 0) {
       const id = data[0].id;
       var query = new PQ(
