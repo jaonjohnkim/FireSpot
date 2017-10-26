@@ -54,7 +54,6 @@ app.get('/:params', async (req, res) => {
           redis.addToCache(req.query, data, null);
         }
       } else {
-        console.log("WHY IS THIS DATA MISSING?", data);
         res.status(400).send('Outside of boundary');
       }
       console.log('Done');
