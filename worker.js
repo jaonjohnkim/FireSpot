@@ -1,6 +1,7 @@
 const request = require('request-promise');
 const Promise = require('bluebird');
 const db = require('./db/index.js');
+const redis = require('./redisHelper.js');
 const statsD = require('node-statsd');
 const statsDClient = new statsD({
   host: 'statsd.hostedgraphite.com',
