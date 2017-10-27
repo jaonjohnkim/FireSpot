@@ -6,7 +6,7 @@ const redis = require('./redisHelper.js');
 const bodyParser = require('body-parser');
 const statsD = require('node-statsd');
 const statsDClient = new statsD({
-  host: statsd.hostedgraphite.com,
+  host: 'statsd.hostedgraphite.com',
   port: 8125,
   prefix: '00436c17-5dfb-4df2-bd21-634d9a0ab64f'
 });
