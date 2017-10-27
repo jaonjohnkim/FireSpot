@@ -68,7 +68,6 @@ const _getFireIncidentsByDateFromAPI = (date) => {
 const start = () => {
   const today = new Date();
   const start = Date.now();
-  let totalActive;
   console.log("Worker starting for date:", today.toString());
   db.checkDBForMissingData()
   .then(async (stackOfDates) => {
@@ -93,7 +92,7 @@ const start = () => {
       //   return _getFireIncidentsByDateFromAPI(date)
       //   .then(data => {
       //     // console.log('Response Data:', data);
-      //     var processed = _processData(JSON.parse(data));
+      //     var processed = _processData(JSON.parsestatsd.hostedgraphite.com(data));
       //     return _insertIntoDB(processed);
       //   })
       // }))
@@ -126,7 +125,7 @@ const start = () => {
     })
   })
   .then(() => {
-    totalActive = Date.now() - start;
+    const totalActive = Date.now() - start;
     statsDClient.histogram('worker.time.active', totalActive);
   })
   .catch(err => {
