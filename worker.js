@@ -1,7 +1,12 @@
 const request = require('request-promise');
 const Promise = require('bluebird');
 const db = require('./db/index.js');
-const redis = require('./server/redisHelper.js');
+const statsD = require('node-statsd');
+const statsDClient = new statsD({
+  host: statsd.hostedgraphite.com,
+  port: 8125,
+  prefix: '00436c17-5dfb-4df2-bd21-634d9a0ab64f'
+});
 
 const _processData = (data) => {
   // Input: Array of objects
@@ -60,7 +65,9 @@ const _getFireIncidentsByDateFromAPI = (date) => {
 // }
 
 const start = () => {
-  var today = new Date();
+  const today = new Date();
+  const start = Date.now();
+  let totalActive;
   console.log("Worker starting for date:", today.toString());
   db.checkDBForMissingData()
   .then(async (stackOfDates) => {
@@ -117,8 +124,13 @@ const start = () => {
       });
     })
   })
+  .then(() => {
+    totalActive = Date.now() - start;
+    statsDClient.histogram('worker.time.active', totalActive);
+  })
   .catch(err => {
     console.error('Error with Worker:', err);
+    statsDClient.increment('worker.fail');
   })
 }
 

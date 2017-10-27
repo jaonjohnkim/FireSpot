@@ -4,6 +4,12 @@ const db = require('../db/index.js')
 const request = require('request-promise');
 const redis = require('./redisHelper.js');
 const bodyParser = require('body-parser');
+const statsD = require('node-statsd');
+const statsDClient = new statsD({
+  host: statsd.hostedgraphite.com,
+  port: 8125,
+  prefix: '00436c17-5dfb-4df2-bd21-634d9a0ab64f'
+});
 
 // amqp.connect(process.env.CLOUDAMQP_URL)
 
@@ -37,11 +43,23 @@ const app = express();
 // });
 
 app.get('/:params', async (req, res) => {
+  const start = Date.now();
+  let latency;
   const {zipcode, startDate, endDate, granularity} = req.query;
+  const today = db.stringifyDate(new Date());
+  let threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  const threeMonthsAgoStr = db.stringifyDate(threeMonthsAgo);
+  startDate = startDate || threeMonthsAgoStr;
+  endDate = endDate || today;
+
   const reply = await redis.getFromCache(req.query)
   if (reply) {
     console.log('Found in cache:', reply);
     res.status(200).send(JSON.parse(reply));
+    latency = Date.now() - start;
+    statsDClient.historgram('query.latency_ms', latency);
+    statsDClient.increment('query.cache.count');
   } else {
     console.log('Not found in cache, getting data from DB');
     db.getFireIncidentsByParamsFromDb(zipcode, startDate, endDate, granularity)
@@ -49,18 +67,27 @@ app.get('/:params', async (req, res) => {
       if (data && data.length > 0) {
         console.log('Got Data from DB, sending and then caching');
         res.status(200).send(data);
+        latency = Date.now() - start;
+        statsDClient.historgram('query.latency_ms', latency);
+        statsDClient.increment('query.db.count');
         if (data) {
           console.log('About to cache', req.query);
           redis.addToCache(req.query, data, null);
         }
       } else {
         res.status(400).send('Outside of boundary');
+        latency = Date.now() - start;
+        statsDClient.historgram('query.latency_ms', latency);
+        statsDClient.increment('query.fail');
       }
       console.log('Done');
     })
     .catch(err => {
       console.error('Error:', err);
       res.status(500).send(err);
+      latency = Date.now() - start;
+      statsDClient.historgram('query.latency_ms', latency);
+      statsDClient.increment('query.fail');
     });
   }
 });
