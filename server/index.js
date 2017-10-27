@@ -43,6 +43,7 @@ const app = express();
 // });
 
 app.get('/:params', async (req, res) => {
+  statsDClient.increment('query.all.count');
   const start = Date.now();
   const {zipcode, granularity} = req.query;
   let {startDate, endDate} = req.query;
@@ -69,10 +70,10 @@ app.get('/:params', async (req, res) => {
         const latency = Date.now() - start;
         statsDClient.histogram('query.latency_ms', latency);
         statsDClient.increment('query.db.count');
-        if (data) {
-          console.log('About to cache', req.query);
-          redis.addToCache(req.query, data, null);
-        }
+        // if (data) {
+        //   console.log('About to cache', req.query);
+        //   redis.addToCache(req.query, data, null);
+        // }
       } else {
         res.status(400).send('Outside of boundary');
         const latency = Date.now() - start;
