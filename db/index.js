@@ -6,6 +6,8 @@ const initOptions = {
   //     console.log('Connected to database:', cp);
   //   }
 }
+const uuidv4 = require('uuid/v4');
+
 
 const pgp = require('pg-promise')(initOptions);
 const PQ = require('pg-promise').ParameterizedQuery;
@@ -38,7 +40,7 @@ const checkDBForMissingData = async () => {
   console.log('About to get fire incidents by date from db for date:', date);
   var data = await _getFireIncidentsByDateFromDb(date);
   // console.log('data', data);
-  while (data.length === 0 && date.getTime() > (new Date('07/01/2017')).getTime()) {
+  while (data.length === 0 && date.getTime() > (new Date('01/01/2003')).getTime()) {
     stack.unshift(stringifyDate(date));
     date.setDate(date.getDate() - 1);
     data = await _getFireIncidentsByDateFromDb(date);
@@ -49,7 +51,7 @@ const checkDBForMissingData = async () => {
 const _getZipcodeId = (zipcode) => {
   // console.log('zipcode:', zipcode);
   var query = new PQ(
-    `SELECT id FROM zipcodes WHERE zipcode = ${zipcode}`
+    `SELECT uuid FROM zipcodes WHERE zipcode = ${zipcode}`
   );
   // console.log('Query:', query);
   return client.any(query)
@@ -62,15 +64,15 @@ const _getZipcodeId = (zipcode) => {
   })
 }
 
-const _insertZipcode = (zipcode, district) => {
+const _insertZipcode = (uuid, zipcode, district) => {
   var query = new PQ(
-    `INSERT INTO zipcodes(zipcode, district) VALUES(${zipcode}, '${district || null}') RETURNING id`
+    `INSERT INTO zipcodes(uuid, zipcode, district) VALUES('${uuid}', ${zipcode}, '${district || null}')`
   );
-  return client.any(query)
-  .then(data => {
-    // console.log('Inserting zipcode into DB successful: ', data);
-    return data[0].id
-  })
+  return client.none(query)
+  // .then(data => {
+  //   // console.log('Inserting zipcode into DB successful: ', data);
+  //   return data[0].id
+  // })
   .catch(err => {
     console.error('Error trying to insert new zipcode:', err, '\nQuery was: ', query);
   })
@@ -82,10 +84,12 @@ const _getOrInsertZipcodeId = (zipcode, district) => {
   .then(data => {
     if (data.length === 0) {
       // console.log('Requested zipcode ', zipcode,' not found in db, adding to db');
-      return _insertZipcode(zipcode, district);
+      const uuid = uuidv4();
+      _insertZipcode(uuid, zipcode, district);
+      return uuid;
     } else {
       // console.log('Requested zipcode ', zipcode,' found in db, id: ', data[0]);
-      return data[0].id;
+      return data[0].uuid;
     }
   })
 }
@@ -108,17 +112,17 @@ const insertIntoDB = async (data) => {
     let id;
     let result;
     try {
-      id = await _getOrInsertZipcodeId(zipcode, data[zipcode].district);
+      zipUuid = await _getOrInsertZipcodeId(zipcode, data[zipcode].district);
     } catch (e) {
       console.error('Error getting/inserting zipcode id', e);
     }
     const query = new PQ(
-      `INSERT INTO fireincidents(zipcode, incident_date, incident_count)
-      VALUES(${id}, '${data[zipcode].date}', ${data[zipcode].incidents})`
+      `INSERT INTO fireincidents(uuid, zipcode, incident_date, incident_count)
+      VALUES('${uuidv4()}', '${zipUuid}', '${data[zipcode].date}', ${data[zipcode].incidents})`
     );
     try {
       result = await client.query(query)
-    } catch (e) {
+    } catch (err) {
       console.error('Error adding new data into the db', err, '\nQuery was:', query);
     }
   }
@@ -152,10 +156,10 @@ const getFireIncidentsByParamsFromDb = (zipcode, startDate, endDate, granularity
       // const id = data[0].id;
     // console.log('GetZipcodeId:', data);
     if (data && data.length > 0) {
-      const id = data[0].id;
+      const uuid = data[0].uuid;
       var query = new PQ(
         `SELECT date_trunc('${granularity}', incident_date) AS "${granularity}", sum(incident_count)
-        FROM fireincidents WHERE incident_date > '${startDate}' AND incident_date < '${endDate}' AND zipcode = ${id}
+        FROM fireincidents WHERE incident_date > '${startDate}' AND incident_date < '${endDate}' AND zipcode = '${uuid}'
         GROUP BY ${granularity} ORDER BY ${granularity};`
       );
       return client.any(query)
