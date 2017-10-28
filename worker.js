@@ -113,13 +113,13 @@ const start = () => {
       let threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       const threeMonthsAgoStr = db.stringifyDate(threeMonthsAgo);
-      db.getFireIncidentsByParamsFromDb(zipcode, threeMonthsAgoStr, today, 'month')
+      db.getFireIncidentsByParamsFromDb(zipcode, threeMonthsAgoStr, today, 'week')
       .then(data => {
         redis.addToCache({
           zipcode: zipcode.toString(),
           startDate: threeMonthsAgoStr,
           endDate: today,
-          granularity: 'month'
+          granularity: 'week'
         }, data, 23*60*60+59*60); //save default cache for 23 hrs and 59 min
       });
     })
