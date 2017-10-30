@@ -126,11 +126,11 @@ const start = () => {
   })
   .then(() => {
     const totalActive = Date.now() - start;
-    statsDClient.histogram('worker.time.active', totalActive);
+    statsDClient.histogram('.service.fire.worker.time.active', totalActive);
   })
   .catch(err => {
     console.error('Error with Worker:', err);
-    statsDClient.increment('worker.fail');
+    statsDClient.increment('.service.fire.worker.fail');
   })
 }
 

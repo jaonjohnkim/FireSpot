@@ -3,7 +3,6 @@ const db = require('../db/index.js')
 // var amqp = require('amqplib/callback_api'); // message bus
 const request = require('request-promise');
 const redis = require('./redisHelper.js');
-const bodyParser = require('body-parser');
 const statsD = require('node-statsd');
 const statsDClient = new statsD({
   host: 'statsd.hostedgraphite.com',
@@ -15,61 +14,45 @@ const statsDClient = new statsD({
 
 const app = express();
 
-// app.use(bodyParser.json());
+// const sendMonitorData = ()
 
-// db._getZipcodeId(94102)
-// .then(data => {
-//   console.log('Data:', data);
-// })
-
-// db.getFireIncidentsByParamsFromDb(94102, "2017-07-25T00:00:00.000", "2017-10-25T00:00:00.000", 'month')
-// .then(data => {
-//   if (data && data.length > 0) {
-//     console.log('Got Data from DB, sending and then caching', data);
-//     // res.status(200).send(data);
-//     if (data) {
-//       console.log('About to cache', /*req.query*/);
-//       // redis.addToCache(req.query, data, null);
-//     }
-//   } else {
-//     console.log("WHY IS THIS DATA MISSING?", data);
-//     // res.status(400).send('Outside of boundary');
-//   }
-//   console.log('Done');
-// })
-// .catch(err => {
-//   console.error('Error:', err);
-//   // res.status(500).send(err);
-// });
-
-app.get('/:params', async (req, res) => {
-  statsDClient.increment('.query.all.count');
+app.get('/*', async (req, res) => {
+  statsDClient.increment('.service.fire.query.all');
   const start = Date.now();
-  const {zipcode, granularity} = req.query;
-  let {startDate, endDate} = req.query;
+  let {zipcode, startDate, endDate, granularity} = req.query;
+
   const today = db.stringifyDate(new Date());
   let threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   const threeMonthsAgoStr = db.stringifyDate(threeMonthsAgo);
+
+  zipcode = zipcode || 94102;
   startDate = startDate || threeMonthsAgoStr;
   endDate = endDate || today;
+  granularity = granularity || 'week';
+
+  console.log("startDate:", startDate, typeof startDate);
+  console.log("endDate:", endDate, typeof endDate);
+
   const reply = await redis.getFromCache(req.query)
   if (reply) {
     console.log('Found in cache:', reply);
     res.status(200).send(JSON.parse(reply));
     const latency = Date.now() - start;
-    statsDClient.histogram('.query.latency_ms', latency);
-    statsDClient.increment('.query.cache.count');
+    statsDClient.timing('.service.fire.query.latency_ms', latency);
+    statsDClient.increment('.service.fire.query.cache');
   } else {
     console.log('Not found in cache, getting data from DB');
+    console.log("startDate:", startDate, typeof startDate);
+    console.log("endDate:", endDate, typeof endDate);
     db.getFireIncidentsByParamsFromDb(zipcode, startDate, endDate, granularity)
     .then(data => {
       if (data && data.length > 0) {
         console.log('Got Data from DB, sending and then caching');
         res.status(200).send(data);
         const latency = Date.now() - start;
-        statsDClient.histogram('.query.latency_ms', latency);
-        statsDClient.increment('.query.db.count');
+        statsDClient.timing('.service.fire.query.latency_ms', latency);
+        statsDClient.increment('.service.fire.query.db');
         // if (data) {
         //   console.log('About to cache', req.query);
         //   redis.addToCache(req.query, data, null);
@@ -77,8 +60,8 @@ app.get('/:params', async (req, res) => {
       } else {
         res.status(400).send('Outside of boundary');
         const latency = Date.now() - start;
-        statsDClient.histogram('.query.latency_ms', latency);
-        statsDClient.increment('.query.fail');
+        statsDClient.timing('.service.fire.query.latency_ms', latency);
+        statsDClient.increment('.service.fire.query.fail');
       }
       console.log('Done');
     })
@@ -86,14 +69,12 @@ app.get('/:params', async (req, res) => {
       console.error('Error:', err);
       res.status(500).send(err);
       const latency = Date.now() - start;
-      statsDClient.histogram('.query.latency_ms', latency);
-      statsDClient.increment('.query.fail');
+      statsDClient.timing('.service.fire.query.latency_ms', latency);
+      statsDClient.increment('.service.fire.query.fail');
     });
   }
 });
 
-
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log('API server for Fire Instance is LIVE at port:', process.env.PORT || 3000);
+app.listen(process.env.PORT || 3001, () => {
+  console.log('API server for Fire Instance is LIVE at port:', process.env.PORT || 3001 );
 });

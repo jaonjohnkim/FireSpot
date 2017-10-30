@@ -85,8 +85,10 @@ const _getOrInsertZipcodeId = (zipcode, district) => {
     if (data.length === 0) {
       // console.log('Requested zipcode ', zipcode,' not found in db, adding to db');
       const uuid = uuidv4();
-      _insertZipcode(uuid, zipcode, district);
-      return uuid;
+      return _insertZipcode(uuid, zipcode, district)
+      .then(() => {
+        return uuid;
+      })
     } else {
       // console.log('Requested zipcode ', zipcode,' found in db, id: ', data[0]);
       return data[0].uuid;
