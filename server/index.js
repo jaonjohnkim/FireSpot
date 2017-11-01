@@ -33,16 +33,10 @@ app.get('/*', async (req, res) => {
 
   // console.log("startDate:", startDate, typeof startDate);
   // console.log("endDate:", endDate, typeof endDate);
-  console.log('Latency before redis check: ', Date.now() - start);
   const reply = await redis.getFromCache(req.query)
-  console.log('Latency after redis check: ', Date.now() - start);
   if (reply) {
-    console.log('Found in cache:', reply);
-    console.log('Latency before data send: ', Date.now() - start);
     res.status(200).send(JSON.parse(reply));
-    console.log('Latency after data send: ', Date.now() - start);
-    const latency = Date.now() - start;
-    statsDClient.timing('.service.fire.query.latency_ms', latency);
+    statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
     statsDClient.increment('.service.fire.query.cache');
   } else {
     console.log('Not found in cache, getting data from DB');
@@ -52,33 +46,26 @@ app.get('/*', async (req, res) => {
     .then(data => {
       if (data && data.length > 0) {
         console.log('Got Data from DB, sending and then caching');
-        console.log('Latency before data send: ', Date.now() - start);
         res.status(200).send(data);
-        console.log('Latency after data send: ', Date.now() - start);
-        const latency = Date.now() - start;
-        statsDClient.timing('.service.fire.query.latency_ms', latency);
+        statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
         statsDClient.increment('.service.fire.query.db');
         if (data) {
           console.log('About to cache', req.query);
           redis.addToCache(req.query, data, null);
         }
       } else {
-        console.log('Latency before data send: ', Date.now() - start);
         res.status(400).send('Outside of boundary');
-        console.log('Latency after data send: ', Date.now() - start);
         const latency = Date.now() - start;
-        statsDClient.timing('.service.fire.query.latency_ms', latency);
+        statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
         statsDClient.increment('.service.fire.query.fail');
       }
       console.log('Done');
     })
     .catch(err => {
       console.error('Error:', err);
-      console.log('Latency before data send: ', Date.now() - start);
       res.status(500).send(err);
-      console.log('Latency after data send: ', Date.now() - start);
       const latency = Date.now() - start;
-      statsDClient.timing('.service.fire.query.latency_ms', latency);
+      statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
       statsDClient.increment('.service.fire.query.fail');
     });
   }
