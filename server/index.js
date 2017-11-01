@@ -58,10 +58,10 @@ app.get('/*', async (req, res) => {
         const latency = Date.now() - start;
         statsDClient.timing('.service.fire.query.latency_ms', latency);
         statsDClient.increment('.service.fire.query.db');
-        // if (data) {
-        //   console.log('About to cache', req.query);
-        //   redis.addToCache(req.query, data, null);
-        // }
+        if (data) {
+          console.log('About to cache', req.query);
+          redis.addToCache(req.query, data, null);
+        }
       } else {
         console.log('Latency before data send: ', Date.now() - start);
         res.status(400).send('Outside of boundary');
