@@ -35,6 +35,7 @@ app.get('/*', async (req, res) => {
   // console.log("endDate:", endDate, typeof endDate);
   console.log('Latency before redis check: ', Date.now() - start);
   const reply = await redis.getFromCache(req.query)
+  console.log('Latency after redis check: ', Date.now() - start);
   if (reply) {
     console.log('Found in cache:', reply);
     console.log('Latency before data send: ', Date.now() - start);
