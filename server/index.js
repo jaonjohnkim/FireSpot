@@ -37,7 +37,9 @@ app.get('/*', async (req, res) => {
   const reply = await redis.getFromCache(req.query)
   if (reply) {
     console.log('Found in cache:', reply);
+    console.log('Latency before data send: ', Date.now() - start);
     res.status(200).send(JSON.parse(reply));
+    console.log('Latency after data send: ', Date.now() - start);
     const latency = Date.now() - start;
     statsDClient.timing('.service.fire.query.latency_ms', latency);
     statsDClient.increment('.service.fire.query.cache');

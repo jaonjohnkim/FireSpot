@@ -1,9 +1,9 @@
-var Cron = require('cron').CronJob;
-var request = require('request');
-var worker = require('./worker.js');
+const Cron = require('cron').CronJob;
+const request = require('request');
+const worker = require('./worker.js');
 
 
-var job = new Cron({
+const job = new Cron({
   cronTime: '00 59 23 * * *', // Run at 11:59PM every day
   onTick: worker.start(),
   start: true,
