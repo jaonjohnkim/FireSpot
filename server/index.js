@@ -31,9 +31,9 @@ app.get('/*', async (req, res) => {
   endDate = endDate || today;
   granularity = granularity || 'week';
 
-  console.log("startDate:", startDate, typeof startDate);
-  console.log("endDate:", endDate, typeof endDate);
-
+  // console.log("startDate:", startDate, typeof startDate);
+  // console.log("endDate:", endDate, typeof endDate);
+  console.log('Latency before redis check: ', Date.now() - start);
   const reply = await redis.getFromCache(req.query)
   if (reply) {
     console.log('Found in cache:', reply);
