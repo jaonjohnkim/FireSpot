@@ -51,7 +51,9 @@ app.get('/*', async (req, res) => {
     .then(data => {
       if (data && data.length > 0) {
         console.log('Got Data from DB, sending and then caching');
+        console.log('Latency before data send: ', Date.now() - start);
         res.status(200).send(data);
+        console.log('Latency after data send: ', Date.now() - start);
         const latency = Date.now() - start;
         statsDClient.timing('.service.fire.query.latency_ms', latency);
         statsDClient.increment('.service.fire.query.db');
@@ -60,7 +62,9 @@ app.get('/*', async (req, res) => {
         //   redis.addToCache(req.query, data, null);
         // }
       } else {
+        console.log('Latency before data send: ', Date.now() - start);
         res.status(400).send('Outside of boundary');
+        console.log('Latency after data send: ', Date.now() - start);
         const latency = Date.now() - start;
         statsDClient.timing('.service.fire.query.latency_ms', latency);
         statsDClient.increment('.service.fire.query.fail');
@@ -69,7 +73,9 @@ app.get('/*', async (req, res) => {
     })
     .catch(err => {
       console.error('Error:', err);
+      console.log('Latency before data send: ', Date.now() - start);
       res.status(500).send(err);
+      console.log('Latency after data send: ', Date.now() - start);
       const latency = Date.now() - start;
       statsDClient.timing('.service.fire.query.latency_ms', latency);
       statsDClient.increment('.service.fire.query.fail');
