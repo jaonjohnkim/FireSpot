@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BitArchitect/BackgroundWorkerFireIncidents.git"
+    "url": "git+https://github.com/BitArchitect/FireSpot.git"
   },
   "engines": {
     "node": ">= 7.6.0"
@@ -18,9 +18,9 @@
   "author": "Ja-on John Kim",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/BitArchitect/BackgroundWorkerFireIncidents/issues"
+    "url": "https://github.com/BitArchitect/FireSpot/issues"
   },
-  "homepage": "https://github.com/BitArchitect/BackgroundWorkerFireIncidents#readme",
+  "homepage": "https://github.com/BitArchitect/FireSpot#readme",
   "dependencies": {
     "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
