@@ -16,6 +16,6 @@ CREATE TABLE fireincidents (
   uuid VARCHAR(36) PRIMARY KEY,
   zipcode VARCHAR(36),
   incident_date TIMESTAMP,
-  incident_count INT
+  incident_count INT,
   FOREIGN KEY (zipcode) REFERENCES zipcodes(uuid)
 );

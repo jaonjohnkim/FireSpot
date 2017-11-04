@@ -19,18 +19,18 @@ const app = express();
 app.get('/*', async (req, res) => {
   statsDClient.increment('.service.fire.query.all');
   const start = Date.now();
-  let {zipcode, startDate, endDate, granularity} = req.query;
+
 
   const today = db.stringifyDate(new Date());
   let threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   const threeMonthsAgoStr = db.stringifyDate(threeMonthsAgo);
 
-  zipcode = zipcode || 94102;
-  startDate = startDate || threeMonthsAgoStr;
-  endDate = endDate || today;
-  granularity = granularity || 'week';
-
+  req.zipcode = req.zipcode || 94102;
+  req.startDate = req.startDate || threeMonthsAgoStr;
+  req.endDate = req.endDate || today;
+  req.granularity = req.granularity || 'week';
+  let {zipcode, startDate, endDate, granularity} = req.query;
   // console.log("startDate:", startDate, typeof startDate);
   // console.log("endDate:", endDate, typeof endDate);
   const reply = await redis.getFromCache(req.query)
@@ -40,8 +40,8 @@ app.get('/*', async (req, res) => {
     statsDClient.increment('.service.fire.query.cache');
   } else {
     console.log('Not found in cache, getting data from DB');
-    console.log("startDate:", startDate, typeof startDate);
-    console.log("endDate:", endDate, typeof endDate);
+    // console.log("startDate:", startDate, typeof startDate);
+    // console.log("endDate:", endDate, typeof endDate);
     db.getFireIncidentsByParamsFromDb(zipcode, startDate, endDate, granularity)
     .then(data => {
       if (data && data.length > 0) {
@@ -50,7 +50,7 @@ app.get('/*', async (req, res) => {
         statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
         statsDClient.increment('.service.fire.query.db');
         if (data) {
-          console.log('About to cache', req.query);
+          // console.log('About to cache', req.query);
           redis.addToCache(req.query, data, null);
         }
       } else {
@@ -59,7 +59,7 @@ app.get('/*', async (req, res) => {
         statsDClient.timing('.service.fire.query.latency_ms', Date.now() - start);
         statsDClient.increment('.service.fire.query.fail');
       }
-      console.log('Done');
+      // console.log('Done');
     })
     .catch(err => {
       console.error('Error:', err);

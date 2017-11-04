@@ -1,0 +1,3 @@
+When using Postgres RDS instance from AWS, download psql on your EC2 instance
+Then use the following command to access the database
+psql --host=<DB instance endpoint> --port=<port> --username=<master user name> --password --dbname=<database name>
