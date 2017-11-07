@@ -56,15 +56,6 @@ const _getFireIncidentsByDateFromAPI = (date) => {
   });
 }
 
-// const processAndInsertIntoDb = async (stackOfDates) => {
-//   for (var i = 0; i < stackOfDates.length; i++) {
-//     let data = await _getFireIncidentsByDateFromAPI(stackOfDates[i]);
-//     let processed = _processData(JSON.parse(data));
-//     let result = await _insertIntoDB(processed);
-//     return result;
-//   }
-// }
-
 const start = () => {
   const today = new Date();
   const start = Date.now();
@@ -87,27 +78,12 @@ const start = () => {
           console.error('Error inserting new data into local db', e);
         }
       }
-      // console.log('getting data from API for MISSING DATES', stackOfDates);
-      // return Promise.all(stackOfDates.map(date => {
-      //   return _getFireIncidentsByDateFromAPI(date)
-      //   .then(data => {
-      //     // console.log('Response Data:', data);
-      //     var processed = _processData(JSON.parsestatsd.hostedgraphite.com(data));
-      //     return _insertIntoDB(processed);
-      //   })
-      // }))
-    // } else {
-    //   console.log('getting data from API for TODAY');
-    //   return _getFireIncidentsByDateFromAPI(today)
-    //   .then(data => {
-    //     var processed = _processData(data);
-    //     return db.insertIntoDB(processed);
-    //   })
-    // }
   })
   .then(() => {
     console.log('Fire Instance Worker finished updating, now adding pre-fetched cache');
-    const defaultCachedZipcodes = [94102, 94103, 94109, 94129, 94130];
+    const defaultCachedZipcodes = [
+      94102,94103,94104,94105,94107,94108,94109,94110,94111,94112,94114,94115,94116,
+      94117,94118,94121,94122,94123,94124,94127,94129,94130,94131,94132,94133,94134,94158];
     defaultCachedZipcodes.forEach(zipcode => {
       const today = db.stringifyDate(new Date());
       let threeMonthsAgo = new Date();
