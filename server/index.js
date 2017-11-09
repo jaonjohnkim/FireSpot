@@ -1,6 +1,8 @@
 const express = require('express');
 const db = require('../db/index.js')
 // var amqp = require('amqplib/callback_api'); // message bus
+const os = require('os');
+const osUtil = require('os-utils');
 const request = require('request-promise');
 const redis = require('./redisHelper.js');
 const statsD = require('node-statsd');
@@ -17,6 +19,13 @@ const app = express();
 // const sendMonitorData = ()
 
 app.get('/*', async (req, res) => {
+  statsDClient.gauge('.service.fire.cpu.speed', parseInt(os.cpus().speed) * 1000000);
+  osUtil.cpuUsage((v) => {
+    statsDClient.gauge('.service.fire.cpu.percent', v);
+  })
+  statsDClient.gauge('.service.fire.memory.used', os.totalmem() - os.freemem());
+  statsDClient.gauge('.service.fire.memory.total', os.freemem());
+
   statsDClient.increment('.service.fire.query.all');
   const start = Date.now();
   let {zipcode, startDate, endDate, granularity} = req.query;
