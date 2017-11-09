@@ -15,8 +15,8 @@ const getFromCache = (query) => {
 const addToCache = (query, result, expiration) => {
   //custom query will cache for 10 sec
   expiration = expiration || 10;
-  // console.log('Adding cache with key:', JSON.stringify(query));
-  // console.log('And value:', JSON.stringify(result));
+  console.log('Adding cache with key:', JSON.stringify(query));
+  console.log('And value:', JSON.stringify(result));
   client.setAsync(JSON.stringify(query), JSON.stringify(result), 'EX', expiration)
   .then(data => {
     console.log('CACHE Return:', data);

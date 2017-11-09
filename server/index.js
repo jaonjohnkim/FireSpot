@@ -76,6 +76,6 @@ app.get('/*', async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT || 3001, () => {
-  console.log('API server for Fire Instance is LIVE at port:', process.env.PORT || 3001 );
+app.listen(process.env.PORT || 3000, () => {
+  console.log('API server for Fire Instance is LIVE at port:', process.env.PORT || 3000 );
 });
