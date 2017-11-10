@@ -20,13 +20,13 @@ const app = express();
 
 app.get('/*', async (req, res) => {
   osUtil.cpuUsage((v) => {
-    statsDClient.gauge('.service.crime.cpu.percent', v);
+    statsDClient.gauge('.service.health.cpu.percent', v);
   })
-  statsDClient.gauge('.service.crime.memory.used.percent', (os.totalmem() - os.freemem() / os.totalmem()));
-  statsDClient.gauge('.service.crime.memory.used.bytes', os.totalmem() - os.freemem());
-  statsDClient.gauge('.service.crime.memory.free.bytes', os.freemem());
+  statsDClient.gauge('.service.health.memory.used.percent', (os.totalmem() - os.freemem() / os.totalmem()));
+  statsDClient.gauge('.service.health.memory.used.bytes', os.totalmem() - os.freemem());
+  statsDClient.gauge('.service.health.memory.free.bytes', os.freemem());
 
-  statsDClient.increment('.service.crime.query.all');
+  statsDClient.increment('.service.health.query.all');
   const start = Date.now();
   let {zipcode, startDate, endDate, granularity} = req.query;
 
@@ -50,8 +50,8 @@ app.get('/*', async (req, res) => {
   const reply = await redis.getFromCache(reqObj);
   if (reply) {
     res.status(200).send(JSON.parse(reply));
-    statsDClient.timing('.service.crime.query.latency_ms', Date.now() - start);
-    statsDClient.increment('.service.crime.query.cache');
+    statsDClient.timing('.service.health.query.latency_ms', Date.now() - start);
+    statsDClient.increment('.service.health.query.cache');
   } else {
     console.log('Not found in cache, getting data from DB');
     // console.log("startDate:", startDate, typeof startDate);
@@ -61,8 +61,8 @@ app.get('/*', async (req, res) => {
       if (data && data.length > 0) {
         console.log('Got Data from DB, sending and then caching');
         res.status(200).send(data);
-        statsDClient.timing('.service.crime.query.latency_ms', Date.now() - start);
-        statsDClient.increment('.service.crime.query.db');
+        statsDClient.timing('.service.health.query.latency_ms', Date.now() - start);
+        statsDClient.increment('.service.health.query.db');
         if (data) {
           // console.log('About to cache', req.query);
           redis.addToCache(reqObj, data, null);
@@ -70,8 +70,8 @@ app.get('/*', async (req, res) => {
       } else {
         res.status(400).send('Outside of boundary');
         const latency = Date.now() - start;
-        statsDClient.timing('.service.crime.query.latency_ms', Date.now() - start);
-        statsDClient.increment('.service.crime.query.fail');
+        statsDClient.timing('.service.health.query.latency_ms', Date.now() - start);
+        statsDClient.increment('.service.health.query.fail');
       }
       // console.log('Done');
     })
@@ -79,8 +79,8 @@ app.get('/*', async (req, res) => {
       console.error('Error:', err);
       res.status(500).send(err);
       const latency = Date.now() - start;
-      statsDClient.timing('.service.crime.query.latency_ms', Date.now() - start);
-      statsDClient.increment('.service.crime.query.fail');
+      statsDClient.timing('.service.health.query.latency_ms', Date.now() - start);
+      statsDClient.increment('.service.health.query.fail');
     });
   }
 });
