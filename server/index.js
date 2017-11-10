@@ -19,12 +19,12 @@ const app = express();
 // const sendMonitorData = ()
 
 app.get('/*', async (req, res) => {
-  statsDClient.gauge('.service.fire.cpu.speed', parseInt(os.cpus().speed) * 1000000);
   osUtil.cpuUsage((v) => {
     statsDClient.gauge('.service.fire.cpu.percent', v);
   })
-  statsDClient.gauge('.service.fire.memory.used', os.totalmem() - os.freemem());
-  statsDClient.gauge('.service.fire.memory.total', os.freemem());
+  statsDClient.gauge('.service.fire.memory.used.percent', (os.totalmem() - os.freemem() / os.totalmem()));
+  statsDClient.gauge('.service.fire.memory.used.bytes', os.totalmem() - os.freemem());
+  statsDClient.gauge('.service.fire.memory.free.bytes', os.freemem());
 
   statsDClient.increment('.service.fire.query.all');
   const start = Date.now();
